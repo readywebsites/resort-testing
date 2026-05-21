@@ -23,7 +23,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = config('DEBUG', default=False , cast = bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['resort.biz499.com']
 
 
 # Application definition
@@ -133,7 +133,7 @@ AUTH_USER_MODEL = 'core.User'
 
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173", # This allows your React Vite app to connect
+    "http://localhost:5173", "https://resort.biz499.com", # This allows your React Vite app to connect
 ]
 
 
