@@ -1,27 +1,40 @@
-"""
-URL configuration for core project.
-
-The `urlpatterns` list routes URLs to views.
-"""
-
 from django.contrib import admin
-from django.urls import path, include, re_path
+from django.urls import include, path, re_path
+from django.views.static import serve
 from django.conf import settings
-from django.conf.urls.static import static
+import os
 
-from core.views import frontend
+DIST_DIR = os.path.join(settings.BASE_DIR, "dist")
+ASSETS_DIR = os.path.join(DIST_DIR, "assets")
 
 urlpatterns = [
-    # Django Admin
+    # Admin
     path('admin/', admin.site.urls),
 
-    # API Routes
+    # API
     path('api/', include('core.urls')),
 
-    # React Frontend Catch-All
-    re_path(r'^.*$', frontend),
-]
+    # React assets (JS/CSS)
+    re_path(
+        r'^assets/(?P<path>.*)$',
+        serve,
+        {'document_root': ASSETS_DIR}
+    ),
 
-# Media Files
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # Other root files if needed
+    re_path(
+        r'^(?P<path>favicon\.svg|icons\.svg)$',
+        serve,
+        {'document_root': DIST_DIR}
+    ),
+
+    # React SPA fallback
+    re_path(
+        r'^.*$',
+        serve,
+        {
+            'path': 'index.html',
+            'document_root': DIST_DIR
+        }
+    ),
+]
