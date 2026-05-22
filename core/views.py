@@ -103,8 +103,8 @@ def book_room(request):
 
             # 2. Get the Room and Payment Status
             room = Room.objects.get(id=data.get('roomId'))
-            payment_status = PaymentStatus.objects.first() # Grabs the 'Pending' status we just made
-            booked_status = RoomStatus.objects.get(name='Booked')
+            payment_status, _ = PaymentStatus.objects.get_or_create(name='Pending')
+            booked_status, _ = RoomStatus.objects.get_or_create(name='Booked')
 
             if room.room_status.name != 'Available':
                 return Response({"error": "Room is not available."}, status=status.HTTP_400_BAD_REQUEST)
@@ -176,7 +176,7 @@ def bulk_create_rooms(request):
         # Get or create default fallback data so the database doesn't crash
         floor, _ = Floor.objects.get_or_create(floor_number="1")
         room_class, _ = RoomClass.objects.get_or_create(name="Standard", defaults={'base_price': 100.00})
-        avail_status = RoomStatus.objects.get(name="Available")
+        avail_status, _ = RoomStatus.objects.get_or_create(name="Available")
 
         # Find the highest room number so we can increment it (e.g., A101 -> A102)
         last_room = Room.objects.order_by('-id').first()
@@ -250,26 +250,6 @@ def update_checkout_date(request, room_id):
         # If it crashes, print the EXACT reason to your terminal so we can see it!
         print("EXTENSION CRASH:", str(e))
         return Response({"error": f"Server Error: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-    try:
-        room = Room.objects.get(id=room_id)
-        new_date = request.data.get('checkOutDate')
-        
-        # Grab the most recent booking for this room
-        booking = room.bookings.order_by('-id').first()
-        if booking:
-            booking.check_out_date = new_date
-            booking.save()
-            
-            # Broadcast update
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)("hotel_staff", {"type": "send_room_update", "message": "refresh_rooms"})
-            
-            return Response({"message": "Checkout date updated!"}, status=status.HTTP_200_OK)
-            
-        return Response({"error": "No active booking found for this room."}, status=status.HTTP_404_NOT_FOUND)
-    except Room.DoesNotExist:
-        return Response({"error": "Room not found"}, status=status.HTTP_404_NOT_FOUND)
-    
 
 
 @api_view(['POST'])
